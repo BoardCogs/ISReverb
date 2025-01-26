@@ -1,0 +1,36 @@
+{
+ "ProjectInfo": {
+  "Project": {
+   "Name": "ISReverb_WwiseProject",
+   "GUID": "{EEEDAFF6-310A-4BDC-AF67-02376681F4D5}",
+   "Generator": "2024.1.1.8691"
+  },
+  "CacheRoot": "../../../../ISReverb_WwiseProject/.cache",
+  "Platforms": [
+   {
+    "Name": "Mac",
+    "GUID": "{25F68A36-B85F-4619-BA85-0C6E5CA0D7C0}",
+    "BasePlatform": "Mac",
+    "BasePlatformGUID": "{9C6217D5-DD11-4795-87C1-6CE02853C540}",
+    "Path": "../../../../ISReverb_WwiseProject/GeneratedSoundBanks/Mac"
+   },
+   {
+    "Name": "Windows",
+    "GUID": "{A35B24B5-C2F2-4D96-B2A6-63822594456D}",
+    "BasePlatform": "Windows",
+    "BasePlatformGUID": "{6E0CB257-C6C8-4C5C-8366-2740DFC441EB}",
+    "Path": "../../../../ISReverb_WwiseProject/GeneratedSoundBanks/Windows"
+   }
+  ],
+  "Languages": [
+   {
+    "Name": "English(US)",
+    "Id": "684519430",
+    "GUID": "{7D65A42D-AC52-4ECE-BEA8-EEEDA6F96919}",
+    "Default": "true",
+    "UseAsStandIn": "true"
+   }
+  ],
+  "FileHash": "{0482EFA5-ED19-0E85-C795-3540E5EC2B7D}"
+ }
+}
