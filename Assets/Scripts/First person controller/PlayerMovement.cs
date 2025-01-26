@@ -64,7 +64,6 @@ public class PlayerMovement : MonoBehaviour
 
         // Applying horizontal velocity
         float moveSpeed = sprinting ? runSpeed : walkSpeed;
-        sprinting = false;
         controller.Move(moveSpeed * Time.deltaTime * move);
 
 
@@ -105,26 +104,36 @@ public class PlayerMovement : MonoBehaviour
 
 
     // Called by input system when movement buttons are pressed
-    void OnMove(InputValue value)
+    public void OnMove(InputAction.CallbackContext context)
     {
-        moveInput = value.Get<Vector2>();
+        moveInput = context.ReadValue<Vector2>();
     }
 
 
 
     // Called by input system when sprint buttons is pressed
-    void OnSprint()
+    public void OnSprint(InputAction.CallbackContext context)
     {
-        sprinting = true;
+        if (context.performed)
+        {
+            sprinting = true;
+        }
+        else if (context.canceled)
+        {
+            sprinting = false;
+        }
     }
 
 
 
     // Called by the input system when jump button is pressed
-    void OnJump()
+    public void OnJump(InputAction.CallbackContext context)
     {
         // Jump is buffered. The character will still jump if the button is pressed slightly before it touches the ground
-        inputJump = true;
-        jumpBuffer = jumpBufferTime;
+        if (context.performed)
+        {
+            inputJump = true;
+            jumpBuffer = jumpBufferTime;
+        }
     }
 }
