@@ -1023,7 +1023,7 @@ MonoBehaviour:
   groundLayers:
     serializedVersion: 2
     m_Bits: 8
-  jumpBufferTime: 0.15
+  jumpBufferTime: 0.1
   terminalVelocity: -15
 --- !u!114 &1737469936
 MonoBehaviour:
