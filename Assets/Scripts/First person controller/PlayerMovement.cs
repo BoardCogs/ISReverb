@@ -26,7 +26,7 @@ public class PlayerMovement : MonoBehaviour
 
     private Vector3 velocity;
 
-    private Transform groundCheck;
+    private Transform groundCheck => transform.Find("GroundCheck");
 
     private float jumpSpeed;
 
@@ -45,7 +45,7 @@ public class PlayerMovement : MonoBehaviour
     {
         controller = GetComponent<CharacterController>();
         jumpSpeed = Mathf.Sqrt(jumpHeight * -2 * gravity);
-        groundCheck = transform.Find("GroundCheck");
+        //groundCheck = transform.Find("GroundCheck");
     }
 
 
@@ -53,6 +53,7 @@ public class PlayerMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        // Checks if the player is currently on ground
         isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundLayers);
 
         // MOVEMENT
@@ -135,5 +136,15 @@ public class PlayerMovement : MonoBehaviour
             inputJump = true;
             jumpBuffer = jumpBufferTime;
         }
+    }
+
+
+
+
+    private void OnDrawGizmosSelected()   
+    {
+        // Draw a green sphere at the transform's position
+        Gizmos.color = Color.green;
+        Gizmos.DrawSphere(groundCheck.position, groundDistance);
     }
 }
