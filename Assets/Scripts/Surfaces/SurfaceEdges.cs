@@ -10,36 +10,29 @@ namespace Surfaces
     [ExecuteInEditMode]
     public class SurfaceEdges : MonoBehaviour
     {
+        private List<Vector3> _points = new();
         private List<Edge> _edges = new();
+
+        public List<Vector3> Points => _points;
+        public List<Edge> Edges => _edges;
 
         
         private void Awake() {
-            var corner0 = transform.TransformPoint(new Vector3(5, 0, 5));
-            var corner1 = transform.TransformPoint(new Vector3(-5, 0, 5));
-            var corner2 = transform.TransformPoint(new Vector3(-5, 0, -5));
-            var corner3 = transform.TransformPoint(new Vector3(5, 0, -5));
+            _points = new()
+            {
+                transform.TransformPoint(new Vector3(5, 0, 5)),
+                transform.TransformPoint(new Vector3(-5, 0, 5)),
+                transform.TransformPoint(new Vector3(-5, 0, -5)),
+                transform.TransformPoint(new Vector3(5, 0, -5))
+            };
 
             _edges = new()
             {
-                new Edge(corner0, corner1),
-                new Edge(corner1, corner2),
-                new Edge(corner2, corner3),
-                new Edge(corner3, corner0)
+                new Edge(_points[0], _points[1]),
+                new Edge(_points[1], _points[2]),
+                new Edge(_points[2], _points[3]),
+                new Edge(_points[3], _points[0])
             };
-        }
-
-
-        // Start is called once before the first execution of Update after the MonoBehaviour is created
-        void Start()
-        {
-            
-        }
-
-
-        // Update is called once per frame
-        void Update()
-        {
-            
         }
 
 
