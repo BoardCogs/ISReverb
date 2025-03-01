@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using UnityEditor.ShaderGraph;
 using UnityEngine;
 
 
@@ -8,14 +7,16 @@ namespace Surfaces
 {
 
     [ExecuteInEditMode]
-    public class SurfaceEdges : MonoBehaviour
+    public class ReflectiveSurface : MonoBehaviour
     {
+        
         private List<Vector3> _points = new();
         private List<Edge> _edges = new();
 
         public List<Vector3> Points => _points;
         public List<Edge> Edges => _edges;
 
+        [ReadOnly] public int id;
         
         private void Awake() {
             _points = new()

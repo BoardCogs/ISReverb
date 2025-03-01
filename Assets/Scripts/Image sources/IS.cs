@@ -1,20 +1,31 @@
 using UnityEngine;
 
+
+
 namespace ImageSources
 {
 
     public class IS : MonoBehaviour
     {
-        // Start is called once before the first execution of Update after the MonoBehaviour is created
-        void Start()
+        
+        // The index of this Image Source in its ISTree
+        [ReadOnly] public int id;
+
+        // The position of the Image Source
+        [HideInInspector] public Vector3 position;
+
+
+
+        public IS(int x)
         {
-            
+            id = x;
         }
 
-        // Update is called once per frame
-        void Update()
+        void OnDrawGizmos()
         {
-            
+            Gizmos.color = Color.green;
+
+            Gizmos.DrawSphere(position, 0.1f);
         }
     }
 }
