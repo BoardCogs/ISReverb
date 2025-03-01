@@ -7,9 +7,9 @@ using ImageSources;
 namespace Source
 {
 
-    public class ISTree : MonoBehaviour
+    public class ISTree
     {
-        
+
         // Number of surfaces
         private int _n;
 
@@ -17,9 +17,11 @@ namespace Source
         private int _r;
 
         // All nodes of the tree, each one identifying an Image Source
-        private List<IS> _nodes;
+        private List<IS> _nodes = new();
 
         public List<IS> Nodes => _nodes;
+
+        public int R => _r;
 
 
         // Creates a tree of Image Sources
@@ -35,10 +37,14 @@ namespace Source
                 // If the node i has a parent, and their surface's index is the same, this reflection is impossible and no IS is created
                 // Otherwise, new IS created
                 if ( Parent(i) != -1 && SurfaceIndex(i) == SurfaceIndex(Parent(i)) )
+                {
                     _nodes.Add(null);
+                }
                 else
+                {
                     // TODO: here it needs to instantiate a new prefab, having attached the IS component
                     _nodes.Add(new IS(i));
+                }
             }
         }
 

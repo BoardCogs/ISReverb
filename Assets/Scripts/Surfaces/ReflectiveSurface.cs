@@ -9,12 +9,14 @@ namespace Surfaces
     [ExecuteInEditMode]
     public class ReflectiveSurface : MonoBehaviour
     {
-        
+
         private List<Vector3> _points = new();
         private List<Edge> _edges = new();
 
         public List<Vector3> Points => _points;
         public List<Edge> Edges => _edges;
+        public Vector3 normal => transform.TransformPoint(0, 1, 0) - origin;
+        public Vector3 origin => transform.TransformPoint(0, 0, 0);
 
         [ReadOnly] public int id;
         
