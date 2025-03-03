@@ -52,12 +52,12 @@ namespace Source
 
             for (int i = 0 ; i < tree.Nodes.Count ; i++)
             {
-                if (tree.Nodes[i] == null || ( tree.Parent(i) != -1 && tree.Nodes[tree.Parent(i)] == null ) )
+                if (tree.Nodes[i] == null || ( tree.Nodes[i].parent != -1 && tree.Nodes[tree.Nodes[i].parent] == null ) )
                     continue;
 
-                p = tree.Parent(i) != -1 ? tree.Nodes[tree.Parent(i)].position : transform.position;
+                p = tree.Nodes[i].parent != -1 ? tree.Nodes[tree.Nodes[i].parent].position : transform.position;
                 
-                p -= 2 * Vector3.Dot( surfaces[tree.SurfaceIndex(i)].normal , p - surfaces[tree.SurfaceIndex(i)].origin ) * surfaces[tree.SurfaceIndex(i)].normal;
+                p -= 2 * Vector3.Dot( surfaces[tree.Nodes[i].surface].normal , p - surfaces[tree.Nodes[i].surface].origin ) * surfaces[tree.Nodes[i].surface].normal;
 
                 tree.Nodes[i].position = p;
             }
