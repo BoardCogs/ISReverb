@@ -22,6 +22,9 @@ namespace Source
         // Set to true to activate IS generation (only in play mode)
         public bool generateImageSources = false;
 
+        // Set to true to activate IS generation (only in play mode)
+        public bool drawImageSources = false;
+
 
 
         // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -78,14 +81,17 @@ namespace Source
 
             Gizmos.DrawSphere(transform.position, 0.5f);
 
-            Gizmos.color = Color.green;
-
-            if (tree != null)
+            if (drawImageSources == true)
             {
-                foreach (var node in tree.Nodes)
+                Gizmos.color = Color.green;
+
+                if (tree != null)
                 {
-                    if (node != null)
-                        Gizmos.DrawSphere(node.position, 0.5f);
+                    foreach (var node in tree.Nodes)
+                    {
+                        if (node != null)
+                            Gizmos.DrawSphere(node.position, 0.5f);
+                    }
                 }
             }
         }
