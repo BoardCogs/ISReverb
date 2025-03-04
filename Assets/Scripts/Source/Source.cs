@@ -14,16 +14,21 @@ namespace Source
         // The Image Sources tree
         private ISTree tree;
 
-        private List<ReflectiveSurface> surfaces => SurfaceManager.Instance.surfaces;
 
-        // The order of reflections for this source
+
+        [Tooltip("The maximum order of reflection to be computed")]
         public int order;
 
-        // Set to true to activate IS generation (only in play mode)
+        [Tooltip("Set to true to activate IS generation (only in play mode)")]
         public bool generateImageSources = false;
 
-        // Set to true to activate IS generation (only in play mode)
+        [Tooltip("Set to true to visualize ISs (performance heavy)")]
         public bool drawImageSources = false;
+
+        [Header("Optimizations")]
+
+        [Tooltip("Set true to remove all ISs that fall on the front side of their reflecting surface")]
+        public bool WrongSideOfReflector = true;
 
 
 
@@ -45,22 +50,7 @@ namespace Source
 
         private void GenerateISPositions()
         {
-            if (tree == null || tree.R != order)
-                tree = new(SurfaceManager.Instance.N, order);
-
-            Vector3 p;
-
-            for (int i = 0 ; i < tree.Nodes.Count ; i++)
-            {
-                if (tree.Nodes[i] == null || ( tree.Nodes[i].parent != -1 && tree.Nodes[tree.Nodes[i].parent] == null ) )
-                    continue;
-
-                p = tree.Nodes[i].parent != -1 ? tree.Nodes[tree.Nodes[i].parent].position : transform.position;
-                
-                p -= 2 * Vector3.Dot( surfaces[tree.Nodes[i].surface].normal , p - surfaces[tree.Nodes[i].surface].origin ) * surfaces[tree.Nodes[i].surface].normal;
-
-                tree.Nodes[i].position = p;
-            }
+            tree = new(SurfaceManager.Instance.N, order, transform.position, WrongSideOfReflector);
         }
 
 
