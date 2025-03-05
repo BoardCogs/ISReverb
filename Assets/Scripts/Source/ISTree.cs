@@ -55,6 +55,7 @@ namespace Source
                 0
             };
 
+            // Creating the first order ISs
             for (int i = 0; i < _sn ; i++)
             {
                 _nodes.Add( new IS( i, -1, i, new( Surfaces[i].Points , Surfaces[i].Edges ) ) );
@@ -67,12 +68,18 @@ namespace Source
 
             }
 
+            // Creating all ISs from second order onward
             for (int i = _sn, order = 2 ; order <= _ro ; order++)
             {
+                // Sets the first IS of the currently considered order of reflection
                 firstNodeOfOrder.Add(i);
 
+                // Checks on all ISs belonging to the previous order, acting as parents for new Image Sources
                 for (int p = firstNodeOfOrder[order-1] ; p < firstNodeOfOrder[order] ; p++)
                 {
+                    // TODO: generate beam planes for the parent only here, to avoid repeating the operation for each child
+
+                    // Iterates on all surfaces, checking if a new IS can be derived from a reflection of the parent on them
                     for (int s = 0 ; s < _sn ; s++)
                     {
                         if ( CreateIS(i, p, s) )
