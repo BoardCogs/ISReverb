@@ -57,7 +57,7 @@ namespace Source
 
             for (int i = 0; i < _sn ; i++)
             {
-                _nodes.Add(new IS(i, -1, i));
+                _nodes.Add( new IS( i, -1, i, new( Surfaces[i].Points , Surfaces[i].Edges ) ) );
 
                 var pos = sourcePos;
                     
@@ -75,7 +75,7 @@ namespace Source
                 {
                     for (int s = 0 ; s < _sn ; s++)
                     {
-                        if ( CreationCondition(i, p, s) )
+                        if ( CreateIS(i, p, s) )
                             i++;
                     }
                 }
@@ -96,8 +96,8 @@ namespace Source
 
 
 
-        // Condition for the creation of a new Image Source
-        private bool CreationCondition(int i, int parent, int surface)
+        // This function checks all conditions for creating a new Image Source, then creates it if all are respected
+        private bool CreateIS(int i, int parent, int surface)
         {
             // Checking that no IS is created identifying a reflection on the same surface twice in a row
             // This is because a double reflection is impossible assuming flat surfaces
@@ -121,7 +121,7 @@ namespace Source
 
             // IS is created and its position is given
 
-            _nodes.Add(new IS(i, parent, surface));
+            _nodes.Add( new IS(i, parent, surface, new( Surfaces[surface].Points , Surfaces[surface].Edges ) ) );
             _nodes[i].position = pos;
 
             return true;

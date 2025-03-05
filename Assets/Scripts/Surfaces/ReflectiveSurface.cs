@@ -7,16 +7,20 @@ namespace Surfaces
 {
 
     [ExecuteInEditMode]
+    [RequireComponent (typeof (Collider))]
     public class ReflectiveSurface : MonoBehaviour
     {
 
         private List<Vector3> _points = new();
         private List<Edge> _edges = new();
 
-        public List<Vector3> Points => _points;
-        public List<Edge> Edges => _edges;
+        public List<Vector3> Points => new(_points);
+        public List<Edge> Edges => new(_edges);
+        
         public Vector3 normal => transform.TransformPoint(0, 1, 0) - origin;
         public Vector3 origin => transform.TransformPoint(0, 0, 0);
+
+        [HideInInspector] public int colliderID;
 
         [ReadOnly] public int id;
         
@@ -36,6 +40,8 @@ namespace Surfaces
                 new Edge(_points[2], _points[3]),
                 new Edge(_points[3], _points[0])
             };
+
+            colliderID = GetComponent<Collider>().GetInstanceID();
         }
 
 

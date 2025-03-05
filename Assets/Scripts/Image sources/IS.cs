@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using Surfaces;
 using UnityEngine;
 
 
@@ -20,13 +22,17 @@ namespace ImageSources
         // The position of the Image Source
         [HideInInspector] public Vector3 position = new(0, 0, 0);
 
+        //
+        [HideInInspector] public Beam beamPoints;
 
 
-        public IS(int i, int p, int s)
+
+        public IS(int i, int p, int s, Beam beam)
         {
             id = i;
             parent = p;
             surface = s;
+            beamPoints = beam;
         }
 
 
