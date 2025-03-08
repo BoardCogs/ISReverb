@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using ImageSources;
 using Surfaces;
-using Unity.Mathematics;
+using System;
 
 
 
@@ -11,7 +11,6 @@ namespace Source
 
     public class ISTree
     {
-
         // Number of surfaces
         private int _sn;
 
@@ -27,6 +26,12 @@ namespace Source
 
         private int _wrongSide = 0;
 
+        public bool _beamTracing;
+
+        public bool _beamClipping;
+
+        private int _beam = 0;
+
         private List<ReflectiveSurface> Surfaces => SurfaceManager.Instance.surfaces;
 
         public List<IS> Nodes => _nodes;
@@ -40,7 +45,7 @@ namespace Source
         // Creates a tree of Image Sources
         // N = number of surfaces
         // R = maximum order of reflections
-        public ISTree(int n, int r, Vector3 sourcePos, bool wrongSideOfReflector)
+        public ISTree(int n, int r, Vector3 sourcePos, bool wrongSideOfReflector, bool beamTracing, bool beamClipping)
         {
             if (r == 0)
                 return;
@@ -48,12 +53,16 @@ namespace Source
             _sn = n;
             _ro = r;
             _wrongSideOfReflector = wrongSideOfReflector;
+            _beamTracing = beamTracing;
+            _beamClipping = beamClipping;
 
             List<int> firstNodeOfOrder = new()
             {
                 0,
                 0
             };
+
+            List<Plane> projectionPlanes = null;
 
             // Creating the first order ISs
             for (int i = 0; i < _sn ; i++)
@@ -78,11 +87,12 @@ namespace Source
                 for (int p = firstNodeOfOrder[order-1] ; p < firstNodeOfOrder[order] ; p++)
                 {
                     // TODO: generate beam planes for the parent only here, to avoid repeating the operation for each child
+                    projectionPlanes = CreateProjectionPlanes( _nodes[p].position, _nodes[p].beamPoints );
 
                     // Iterates on all surfaces, checking if a new IS can be derived from a reflection of the parent on them
                     for (int s = 0 ; s < _sn ; s++)
                     {
-                        if ( CreateIS(i, p, s) )
+                        if ( CreateIS(i, p, s, projectionPlanes) )
                             i++;
                     }
                 }
@@ -96,7 +106,8 @@ namespace Source
                         "Total number of ISs generated: " + _nodes.Count + "\n" +
                         "Optimizations:\n" +
                         " - No reflection on same surface twice in a row: " + _noDouble + " ISs removed\n" +
-                        " - Wrong side of reflector: " + _wrongSide + " ISs removed"
+                        " - Wrong side of reflector: " + _wrongSide + " ISs removed\n" +
+                        " - Beam tracing" + (_beamClipping ? " + clipping" : "") + ": " + _beam + " ISs removed"
                      );
         }
 
@@ -104,8 +115,9 @@ namespace Source
 
 
         // This function checks all conditions for creating a new Image Source, then creates it if all are respected
-        private bool CreateIS(int i, int parent, int surface)
+        private bool CreateIS(int i, int parent, int surface, List<Plane> projectionPlanes)
         {
+            // 1
             // Checking that no IS is created identifying a reflection on the same surface twice in a row
             // This is because a double reflection is impossible assuming flat surfaces
             if ( surface == _nodes[parent].surface )
@@ -118,21 +130,188 @@ namespace Source
             var pos = _nodes[parent].position;
             pos -= 2 * Vector3.Dot( Surfaces[surface].normal , pos - Surfaces[surface].origin ) * Surfaces[surface].normal;
 
+
+
+            // 2
             // Checking that the IS is not on the wrong side of the reflector, standing on the opposite side of the surface's normal
             if ( _wrongSideOfReflector && Vector3.Dot( Surfaces[surface].normal , pos - Surfaces[surface].origin ) >= 0 )
             {
                 _wrongSide++;
                 return false;
             }
-            
+
+
+
+            // 3
+            // Checking that reflections from parent to this surface are possible
+
+            Beam beam = new( Surfaces[surface].Points , Surfaces[surface].Edges );
+
+            if (_beamTracing)
+            {
+                Vector3 intersection;
+                Vector3 secondIntersection;
+                Vector3 inPoint;
+                Vector3 outPoint;
+                Vector3 otherPoint;
+                Edge otherEdge;
+
+                int e = 0;
+
+                int cMax = beam.Edges.Count * _sn * 3;
+                int c = 0;
+
+                while (e < beam.Edges.Count && c < cMax)
+                {
+                    Edge edge = beam.Edges[e];
+
+                    //Debug.Log("Selected edge: [" + edge.pointB + ", " + edge.pointA + "]");
+
+                    foreach (Plane plane in projectionPlanes)
+                    {
+                        c++;
+                        
+                        // Checks if the edge intersects the plane
+                        if (LinePlaneIntersection( out intersection, edge.pointA, edge.pointB - edge.pointA, plane.normal, _nodes[parent].position ))
+                        {
+                            // The point that is on the ocrrect semispace of the plane (to be kept)
+                            inPoint = Vector3.Dot( plane.normal, edge.pointA - _nodes[parent].position ) > 0 ? edge.pointA : edge.pointB;
+                            // The point that is on the other semispace of the plane (to be removed)
+                            outPoint = inPoint == edge.pointA ? edge.pointB : edge.pointA;
+
+                            // Finds the other edge that the point to be removed belongs to
+                            otherEdge = beam.FindOtherEdge(outPoint, inPoint);
+
+                            // The other point to which outPoint is connected
+                            otherPoint = otherEdge.pointA == outPoint ? otherEdge.pointB : otherEdge.pointA;
+
+                            // Checks if the other edge has also intersections with the same plane
+                            if (LinePlaneIntersection( out secondIntersection, otherEdge.pointA, otherEdge.pointB - otherEdge.pointA, plane.normal, _nodes[parent].position))
+                            {
+                                beam.RemovePoint(outPoint);
+
+                                beam.RemoveEdge(edge);
+                                beam.RemoveEdge(otherEdge);
+
+                                beam.AddPoint(intersection);
+                                beam.AddPoint(secondIntersection);
+
+                                beam.AddEdge(intersection, inPoint);
+                                beam.AddEdge(intersection, secondIntersection);
+                                beam.AddEdge(secondIntersection, otherPoint);
+                            }
+                            else
+                            {
+                                beam.RemovePoint(outPoint);
+                                
+                                beam.RemoveEdge(edge);
+                                beam.RemoveEdge(otherEdge);
+
+                                beam.AddPoint(intersection);
+
+                                beam.AddEdge(intersection, inPoint);
+                                beam.AddEdge(intersection, otherPoint);
+                            }
+
+                            // This edge has been removed, the iteration needs to begin again with another edge
+                            // The edge counter e is set to 0 each time an intersection is found, this way the process stops once there are no more intersections
+                            e = 0;
+                            break;
+                        }
+                    }
+
+                    e++;
+                }
+
+
+                foreach (Vector3 point in beam.Points)
+                {
+                    foreach (Plane plane in projectionPlanes)
+                    {
+                        if ( Vector3.Dot(point - _nodes[parent].position, plane.normal) < -0.01f )
+                        {
+                            _beam++;
+                            return false;
+                        }
+                    }
+                }
+            }
+
+
 
             // IS is created and its position is given
+            if (_beamClipping)
+                _nodes.Add( new IS(i, parent, surface, beam ) );
+            else
+                _nodes.Add( new IS(i, parent, surface, new( Surfaces[surface].Points , Surfaces[surface].Edges ) ) );
 
-            _nodes.Add( new IS(i, parent, surface, new( Surfaces[surface].Points , Surfaces[surface].Edges ) ) );
             _nodes[i].position = pos;
 
             return true;
         }
+
+
+
+        // Given an IS position and the portion of the surface on which it needs to be projected, returns the set of planes passing from the IS to each edge
+        private List<Plane> CreateProjectionPlanes(Vector3 position, Beam beam)
+        {
+            List<Plane> planes = new();
+            foreach (Edge e in beam.Edges)
+            {
+                var normal = Vector3.Cross(e.pointA - position, e.pointB - position);
+
+                normal = CheckNormal(normal, e.pointA, e.pointB, beam.Points) ? normal : -normal;
+
+                planes.Add( new Plane( normal, position) );
+            }
+
+            return planes;
+        }
+
+
+
+        // Given a vector, an edge and a set of points (supposedly forming a convex polygon), checks if said vector is pointing in the direction of all points
+        private bool CheckNormal(Vector3 normal, Vector3 pointA, Vector3 pointB, List<Vector3> points)
+        {   
+            foreach(Vector3 point in points)
+            {
+                if (point != pointA && point != pointB)
+                    return Vector3.Dot(point - pointA, normal) >= 0;
+            }
+
+            return true;
+        }
+
+
+
+        // Returns true if a plane and segment intersect, point of intersection is in output in the variable intersection
+        public static bool LinePlaneIntersection(out Vector3 intersection, Vector3 linePoint, Vector3 lineVec, Vector3 planeNormal, Vector3 planePoint, double epsilon = 1e-6)
+        {
+            float length;
+            float dotNumerator;
+            float dotDenominator;
+            intersection = Vector3.zero;
+
+            //calculate the distance between the linePoint and the line-plane intersection point
+            dotNumerator = Vector3.Dot(planePoint - linePoint, planeNormal);
+            dotDenominator = Vector3.Dot(lineVec.normalized, planeNormal);
+
+            // Checks that plane and line are not parallel
+            if ( Math.Abs(dotDenominator) > epsilon)
+            {
+                length = dotNumerator / dotDenominator;
+
+                intersection = linePoint + lineVec.normalized * length;
+
+                return length > 0.01f && length < (lineVec.magnitude - 0.01f);
+            }
+            else
+            {
+                // The line and plane are parallel (nothing to do)
+                return false;
+            }
+        }
+
 
     }
 }

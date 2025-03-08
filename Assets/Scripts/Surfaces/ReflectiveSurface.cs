@@ -46,6 +46,7 @@ namespace Surfaces
 
 
         // Called each frame to draw gizmos
+        /*
         private void OnDrawGizmos() {
             Gizmos.color = Color.blue;
 
@@ -53,6 +54,7 @@ namespace Surfaces
                 Gizmos.DrawLine(edge.pointA, edge.pointB);
             }
         }
+        */
     }
 
 }

@@ -1,6 +1,5 @@
 using UnityEngine;
 using Surfaces;
-using UnityEngine.UIElements;
 using ImageSources;
 using System.Collections.Generic;
 
@@ -13,7 +12,6 @@ namespace Source
     {
         // The Image Sources tree
         private ISTree tree;
-
 
 
         [Tooltip("The maximum order of reflection to be computed")]
@@ -29,6 +27,12 @@ namespace Source
 
         [Tooltip("Set true to remove all ISs that fall on the front side of their reflecting surface")]
         public bool WrongSideOfReflector = true;
+        public bool BeamTracing = true;
+        public bool BeamClipping = true;
+
+        [Header("Debug")]
+
+        public int nodeCheck = 0;
 
 
 
@@ -40,17 +44,9 @@ namespace Source
 
 
 
-        // Update is called once per frame
-        void Update()
-        {
-            
-        }
-
-
-
         private void GenerateISPositions()
         {
-            tree = new(SurfaceManager.Instance.N, order, transform.position, WrongSideOfReflector);
+            tree = new(SurfaceManager.Instance.N, order, transform.position, WrongSideOfReflector, BeamTracing, BeamClipping);
         }
 
 
@@ -63,6 +59,7 @@ namespace Source
                 generateImageSources = false;
             }
         }
+
 
 
         void OnDrawGizmos()
@@ -82,6 +79,38 @@ namespace Source
                         if (node != null)
                             Gizmos.DrawSphere(node.position, 0.5f);
                     }
+                }
+            }
+
+            
+
+            if (nodeCheck != 0 && nodeCheck >= SurfaceManager.Instance.N)
+            {
+                Gizmos.color = Color.red;
+
+                IS node = tree.Nodes[nodeCheck];
+
+                Gizmos.DrawSphere(node.position, 0.7f);
+
+                foreach (var edge in node.beamPoints.Edges) {
+                    Gizmos.DrawLine(edge.pointA, edge.pointB);
+                }
+
+
+
+                Gizmos.color = Color.blue;
+
+                IS nodeParent = tree.Nodes[node.parent];
+
+                Gizmos.DrawSphere(nodeParent.position, 0.7f);
+
+                foreach (var edge in nodeParent.beamPoints.Edges) {
+                    Gizmos.DrawLine(edge.pointA, edge.pointB);
+                }
+
+                foreach (var point in nodeParent.beamPoints.Points)
+                {
+                    Gizmos.DrawLine(point, point + (point-nodeParent.position).normalized * 50);
                 }
             }
         }

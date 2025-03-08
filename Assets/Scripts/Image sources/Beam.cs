@@ -36,32 +36,23 @@ namespace ImageSources
             _edges.Remove(edge);
         }
 
-        public void AddEdge(Edge edge)
+        public void AddEdge(Vector3 pointA, Vector3 pointB)
         {
-            _edges.Add(edge);
+            _edges.Add( new(pointA, pointB) );
         }
 
-        // Finds the other point connected with an edge to a, given b as the already connected one
-        public Vector3 FindOtherEdgePoint(Vector3 a, Vector3 b)
+        // Given a and b, two points connected by an edge, finds the other edge that a belongs to
+        public Edge FindOtherEdge(Vector3 a, Vector3 b)
         {
             foreach (var e in _edges)
             {
-                if ( e.pointA == a && e.pointB != b )
+                if ( ( e.pointA == a || e.pointB == a ) && e.pointB != b && e.pointA != b )
                 {
-                    _points.Remove(a);
-                    _edges.Remove(e);
-                    return e.pointB;
-                }
-
-                if ( e.pointB == a && e.pointA != b )
-                {
-                    _points.Remove(a);
-                    _edges.Remove(e);
-                    return e.pointA;
+                    return e;
                 }
             }
 
-            return Vector3.zero;
+            return null;
         }
     }
 }
