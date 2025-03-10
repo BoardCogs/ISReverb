@@ -28,7 +28,8 @@ namespace ImageSources
 
         public void AddPoint(Vector3 point)
         {
-            _points.Add(point); 
+            if (!_points.Contains(point))
+                _points.Add(point);
         }
 
         public void RemoveEdge(Edge edge)
@@ -36,9 +37,18 @@ namespace ImageSources
             _edges.Remove(edge);
         }
 
-        public void AddEdge(Vector3 pointA, Vector3 pointB)
+        public Edge AddEdge(Vector3 pointA, Vector3 pointB)
         {
-            _edges.Add( new(pointA, pointB) );
+            Edge edge = new(pointA, pointB);
+
+            if (_edges.Contains(edge) || pointA == pointB)
+            {
+                return null;
+            }
+
+            _edges.Add( edge );
+
+            return edge;
         }
 
         // Given a and b, two points connected by an edge, finds the other edge that a belongs to

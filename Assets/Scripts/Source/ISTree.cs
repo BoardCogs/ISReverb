@@ -155,80 +155,104 @@ namespace Source
                 Vector3 outPoint;
                 Vector3 otherPoint;
                 Edge otherEdge;
-
+                List<Edge> blackList = new();
                 int e = 0;
 
-                int cMax = beam.Edges.Count * _sn * 3;
-                int c = 0;
-
-                while (e < beam.Edges.Count && c < cMax)
+                
+                // For all 
+                foreach (Plane plane in projectionPlanes)
                 {
-                    Edge edge = beam.Edges[e];
+                    blackList.Clear();
+                    e = 0;
 
-                    //Debug.Log("Selected edge: [" + edge.pointB + ", " + edge.pointA + "]");
-
-                    foreach (Plane plane in projectionPlanes)
+                    while (e < beam.Edges.Count)
                     {
-                        c++;
-                        
+                        Edge edge = beam.Edges[e];
+
                         // Checks if the edge intersects the plane
-                        if (LinePlaneIntersection( out intersection, edge.pointA, edge.pointB - edge.pointA, plane.normal, _nodes[parent].position ))
+                        if ( !blackList.Contains(edge) && LinePlaneIntersection( out intersection, edge.pointA, edge.pointB - edge.pointA, plane.normal, _nodes[parent].position ) )
                         {
-                            // The point that is on the ocrrect semispace of the plane (to be kept)
-                            inPoint = Vector3.Dot( plane.normal, edge.pointA - _nodes[parent].position ) > 0 ? edge.pointA : edge.pointB;
+                            // The point that is on the correct semispace of the plane (to be kept)
+                            inPoint = Vector3.Dot( plane.normal, edge.pointA - _nodes[parent].position ) > Vector3.Dot( plane.normal, edge.pointB - _nodes[parent].position ) ? edge.pointA : edge.pointB;
                             // The point that is on the other semispace of the plane (to be removed)
                             outPoint = inPoint == edge.pointA ? edge.pointB : edge.pointA;
 
                             // Finds the other edge that the point to be removed belongs to
                             otherEdge = beam.FindOtherEdge(outPoint, inPoint);
 
-                            // The other point to which outPoint is connected
-                            otherPoint = otherEdge.pointA == outPoint ? otherEdge.pointB : otherEdge.pointA;
-
-                            // Checks if the other edge has also intersections with the same plane
-                            if (LinePlaneIntersection( out secondIntersection, otherEdge.pointA, otherEdge.pointB - otherEdge.pointA, plane.normal, _nodes[parent].position))
+                            if (otherEdge != null)
                             {
-                                beam.RemovePoint(outPoint);
+                                // The other point to which outPoint is connected
+                                otherPoint = otherEdge.pointA == outPoint ? otherEdge.pointB : otherEdge.pointA;
 
-                                beam.RemoveEdge(edge);
-                                beam.RemoveEdge(otherEdge);
+                                // Checks if the other edge has also intersections with the same plane
+                                if (LinePlaneIntersection( out secondIntersection, otherEdge.pointA, otherEdge.pointB - otherEdge.pointA, plane.normal, _nodes[parent].position))
+                                {
+                                    beam.RemovePoint(outPoint);
 
-                                beam.AddPoint(intersection);
-                                beam.AddPoint(secondIntersection);
+                                    beam.RemoveEdge(edge);
+                                    beam.RemoveEdge(otherEdge);
 
-                                beam.AddEdge(intersection, inPoint);
-                                beam.AddEdge(intersection, secondIntersection);
-                                beam.AddEdge(secondIntersection, otherPoint);
+                                    beam.AddPoint(intersection);
+                                    beam.AddPoint(secondIntersection);
+
+                                    blackList.Add( beam.AddEdge(intersection, inPoint) );
+                                    blackList.Add( beam.AddEdge(intersection, secondIntersection) );
+                                    blackList.Add( beam.AddEdge(secondIntersection, otherPoint) );
+                                }
+                                else
+                                {
+                                    beam.RemovePoint(outPoint);
+                                    
+                                    beam.RemoveEdge(edge);
+                                    beam.RemoveEdge(otherEdge);
+
+                                    beam.AddPoint(intersection);
+
+                                    blackList.Add( beam.AddEdge(intersection, inPoint) );
+                                    blackList.Add( beam.AddEdge(intersection, otherPoint) );
+                                }
+
+                                e = 0;
                             }
                             else
                             {
-                                beam.RemovePoint(outPoint);
-                                
-                                beam.RemoveEdge(edge);
-                                beam.RemoveEdge(otherEdge);
+                                Debug.Log("OutPoint: " + outPoint);
+                                Debug.Log("InPoint: " + inPoint);
 
-                                beam.AddPoint(intersection);
+                                Debug.Log("Current edges in beam: ");
 
-                                beam.AddEdge(intersection, inPoint);
-                                beam.AddEdge(intersection, otherPoint);
+                                foreach (Edge edgeLord in beam.Edges)
+                                {
+                                    Debug.Log("["+ edgeLord.pointA + ", " + edgeLord.pointB +"]");
+                                }
+
+                                blackList.Add(edge);
+                                e++;
                             }
-
-                            // This edge has been removed, the iteration needs to begin again with another edge
-                            // The edge counter e is set to 0 each time an intersection is found, this way the process stops once there are no more intersections
-                            e = 0;
-                            break;
+                        }
+                        else
+                        {
+                            blackList.Add(edge);
+                            e++;
                         }
                     }
-
-                    e++;
                 }
 
+                // If the resulting projection consists of 2 or less points (it's just a line or a point), no IS created
+                if (beam.Points.Count <= 2 || beam.Edges.Count <= 2)
+                {
+                    _beam++;
+                    return false;
+                }
 
+                // Checking, for each point resulting from the projection, if it is in the correct semispace of all planes
                 foreach (Vector3 point in beam.Points)
                 {
                     foreach (Plane plane in projectionPlanes)
                     {
-                        if ( Vector3.Dot(point - _nodes[parent].position, plane.normal) < -0.01f )
+                        // If a point of the projection falls out of a semispace of the projection plane, then no IS is created
+                        if ( Vector3.Dot(point - _nodes[parent].position, plane.normal) < -0.05f )
                         {
                             _beam++;
                             return false;
@@ -303,7 +327,12 @@ namespace Source
 
                 intersection = linePoint + lineVec.normalized * length;
 
-                return length > 0.01f && length < (lineVec.magnitude - 0.01f);
+                if (length < 0)
+                    intersection = linePoint;
+                else if (length > lineVec.magnitude)
+                    intersection = linePoint + lineVec;
+
+                return length >= -0.01f && length <= lineVec.magnitude + 0.01f;
             }
             else
             {
