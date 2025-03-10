@@ -173,7 +173,7 @@ namespace Source
                         if ( !blackList.Contains(edge) && LinePlaneIntersection( out intersection, edge.pointA, edge.pointB - edge.pointA, plane.normal, _nodes[parent].position ) )
                         {
                             // The point that is on the correct semispace of the plane (to be kept)
-                            inPoint = Vector3.Dot( plane.normal, edge.pointA - _nodes[parent].position ) > Vector3.Dot( plane.normal, edge.pointB - _nodes[parent].position ) ? edge.pointA : edge.pointB;
+                            inPoint = Vector3.Dot( plane.normal, (edge.pointA - _nodes[parent].position).normalized ) > Vector3.Dot( plane.normal, (edge.pointB - _nodes[parent].position).normalized ) ? edge.pointA : edge.pointB;
                             // The point that is on the other semispace of the plane (to be removed)
                             outPoint = inPoint == edge.pointA ? edge.pointB : edge.pointA;
 
@@ -252,7 +252,7 @@ namespace Source
                     foreach (Plane plane in projectionPlanes)
                     {
                         // If a point of the projection falls out of a semispace of the projection plane, then no IS is created
-                        if ( Vector3.Dot(point - _nodes[parent].position, plane.normal) < -0.05f )
+                        if ( Vector3.Dot( (point - _nodes[parent].position).normalized, plane.normal) < -0.05f )
                         {
                             _beam++;
                             return false;
@@ -300,7 +300,7 @@ namespace Source
             foreach(Vector3 point in points)
             {
                 if (point != pointA && point != pointB)
-                    return Vector3.Dot(point - pointA, normal) >= 0;
+                    return Vector3.Dot( (point - pointA).normalized, normal) >= 0;
             }
 
             return true;
