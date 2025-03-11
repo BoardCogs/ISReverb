@@ -39,6 +39,8 @@ namespace Source
 
         [ReadOnly] public int parentNode = 0;
 
+        public bool debugBeamTracing;
+
         [ReadOnly] public List<int> inactiveNodes = new();
 
 
@@ -53,7 +55,7 @@ namespace Source
 
         private void GenerateISPositions()
         {
-            tree = new(SurfaceManager.Instance.N, order, transform.position, WrongSideOfReflector, BeamTracing, BeamClipping);
+            tree = new(SurfaceManager.Instance.N, order, transform.position, WrongSideOfReflector, BeamTracing, BeamClipping, debugBeamTracing);
 
             inactiveNodes.Clear();
 

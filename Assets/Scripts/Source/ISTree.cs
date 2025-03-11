@@ -32,7 +32,9 @@ namespace Source
 
         private int _beam = 0;
 
-        private int realISs = 0;
+        private int _realISs = 0;
+
+        private bool _debugBeamTracing;
 
         private List<ReflectiveSurface> Surfaces => SurfaceManager.Instance.surfaces;
 
@@ -47,7 +49,7 @@ namespace Source
         // Creates a tree of Image Sources
         // N = number of surfaces
         // R = maximum order of reflections
-        public ISTree(int n, int r, Vector3 sourcePos, bool wrongSideOfReflector, bool beamTracing, bool beamClipping)
+        public ISTree(int n, int r, Vector3 sourcePos, bool wrongSideOfReflector, bool beamTracing, bool beamClipping, bool debugBeamTracing)
         {
             if (r == 0)
                 return;
@@ -57,6 +59,7 @@ namespace Source
             _wrongSideOfReflector = wrongSideOfReflector;
             _beamTracing = beamTracing;
             _beamClipping = beamClipping;
+            _debugBeamTracing = debugBeamTracing;
 
             List<int> firstNodeOfOrder = new()
             {
@@ -67,7 +70,7 @@ namespace Source
             List<Plane> projectionPlanes = null;
 
             // Creating the first order ISs
-            for (int i = 0; i < _sn ; i++, realISs++)
+            for (int i = 0; i < _sn ; i++, _realISs++)
             {
                 _nodes.Add( new IS( i, -1, i, new( Surfaces[i].Points , Surfaces[i].Edges ) ) );
 
@@ -108,7 +111,7 @@ namespace Source
             The number of not generated ISs is only the tip of the iceberg: their children would have also been generated.
             */
             Debug.Log(  "IS generation over\n" +
-                        "Total number of ISs generated: " + realISs + "\n" +
+                        "Total number of ISs generated: " + _realISs + "\n" +
                         "Optimizations:\n" +
                         " - No reflection on same surface twice in a row: " + _noDouble + " ISs removed\n" +
                         " - Wrong side of reflector: " + _wrongSide + " ISs removed\n" +
@@ -338,9 +341,17 @@ namespace Source
                 if (beam.Points.Count <= 2 || beam.Edges.Count <= 2)
                 {
                     _beam++;
-                    _nodes.Add( new IS(i, parent, surface, beam, false ) );
-                    _nodes[i].position = pos;
-                    return true;
+
+                    if (_debugBeamTracing)
+                    {
+                        _nodes.Add( new IS(i, parent, surface, beam, false ) );
+                        _nodes[i].position = pos;
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
                 }
 
                 // Checking, for each point resulting from the projection, if it is in the correct semispace of all planes
@@ -352,9 +363,17 @@ namespace Source
                         if ( Vector3.Dot( (point - _nodes[parent].position).normalized , plane.normal) < -0.05f )
                         {
                             _beam++;
-                            _nodes.Add( new IS(i, parent, surface, beam, false ) );
-                            _nodes[i].position = pos;
-                            return true;
+
+                            if (_debugBeamTracing)
+                            {
+                                _nodes.Add( new IS(i, parent, surface, beam, false ) );
+                                _nodes[i].position = pos;
+                                return true;
+                            }
+                            else
+                            {
+                                return false;
+                            }
                         }
                     }
                 }
@@ -370,7 +389,7 @@ namespace Source
 
             _nodes[i].position = pos;
 
-            realISs++;
+            _realISs++;
 
             return true;
         }
