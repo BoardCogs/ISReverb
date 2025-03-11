@@ -17,8 +17,8 @@ namespace ImageSources
 
         public Beam(List<Vector3> points, List<Edge> edges)
         {
-            _points = points;
-            _edges = edges;
+            _points = new (points);
+            _edges = new (edges);
         }
 
         public void RemovePoint(Vector3 point)

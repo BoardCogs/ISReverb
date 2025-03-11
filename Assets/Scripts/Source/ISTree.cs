@@ -32,6 +32,8 @@ namespace Source
 
         private int _beam = 0;
 
+        private int realISs = 0;
+
         private List<ReflectiveSurface> Surfaces => SurfaceManager.Instance.surfaces;
 
         public List<IS> Nodes => _nodes;
@@ -65,7 +67,7 @@ namespace Source
             List<Plane> projectionPlanes = null;
 
             // Creating the first order ISs
-            for (int i = 0; i < _sn ; i++)
+            for (int i = 0; i < _sn ; i++, realISs++)
             {
                 _nodes.Add( new IS( i, -1, i, new( Surfaces[i].Points , Surfaces[i].Edges ) ) );
 
@@ -86,6 +88,9 @@ namespace Source
                 // Checks on all ISs belonging to the previous order, acting as parents for new Image Sources
                 for (int p = firstNodeOfOrder[order-1] ; p < firstNodeOfOrder[order] ; p++)
                 {
+                    if (!_nodes[p].active)
+                        continue;
+
                     // TODO: generate beam planes for the parent only here, to avoid repeating the operation for each child
                     projectionPlanes = CreateProjectionPlanes( _nodes[p].position, _nodes[p].beamPoints );
 
@@ -103,7 +108,7 @@ namespace Source
             The number of not generated ISs is only the tip of the iceberg: their children would have also been generated.
             */
             Debug.Log(  "IS generation over\n" +
-                        "Total number of ISs generated: " + _nodes.Count + "\n" +
+                        "Total number of ISs generated: " + realISs + "\n" +
                         "Optimizations:\n" +
                         " - No reflection on same surface twice in a row: " + _noDouble + " ISs removed\n" +
                         " - Wrong side of reflector: " + _wrongSide + " ISs removed\n" +
@@ -142,10 +147,54 @@ namespace Source
 
 
 
+            // TODO:
+            if (parent == 36)
+            {
+                Debug.Log("");
+                Debug.Log("");
+                Debug.Log("");
+
+                Debug.Log("Points:");
+                foreach ( var point in _nodes[parent].beamPoints.Points )
+                {
+                    Debug.Log(point);
+                }
+                Debug.Log("Edges:");
+                foreach ( var edge in _nodes[parent].beamPoints.Edges )
+                {
+                    Debug.Log("[ " + edge.pointA + " , " + edge.pointB + " ]");
+                }
+
+                Debug.Log("");
+
+                Debug.Log("Checking against surface number " + surface);
+            }
+
+
+
             // 3
             // Checking that reflections from parent to this surface are possible
 
             Beam beam = new( Surfaces[surface].Points , Surfaces[surface].Edges );
+
+
+            // TODO:
+            if (parent == 36)
+            {
+                Debug.Log("Points:");
+                foreach ( var point in beam.Points )
+                {
+                    Debug.Log(point);
+                }
+                Debug.Log("Edges:");
+                foreach ( var edge in beam.Edges )
+                {
+                    Debug.Log("[ " + edge.pointA + " , " + edge.pointB + " ]");
+                }
+
+                Debug.Log("");
+            }
+
 
             if (_beamTracing)
             {
@@ -173,10 +222,10 @@ namespace Source
                         if ( !blackList.Contains(edge) && LinePlaneIntersection( out intersection, edge.pointA, edge.pointB - edge.pointA, plane.normal, _nodes[parent].position ) )
                         {
                             bool doNothing = false;
-                            bool intersectionOnAngle = false;
+                            bool intersectionOnExtreme = false;
 
                             // Check if intersection is on the edge extremes
-                            if ((intersection - edge.pointA).magnitude < 0.3f)
+                            if ((intersection - edge.pointA).magnitude <= 0.02f)
                             {
                                 if ( Vector3.Dot( plane.normal, (edge.pointB - _nodes[parent].position).normalized ) >= 0 )
                                 {
@@ -184,10 +233,10 @@ namespace Source
                                 }
                                 else
                                 {
-                                    intersectionOnAngle = true;
+                                    intersectionOnExtreme = true;
                                 }
                             }
-                            else if ((intersection - edge.pointB).magnitude < 0.3f)
+                            else if ((intersection - edge.pointB).magnitude <= 0.02f)
                             {
                                 if ( Vector3.Dot( plane.normal, (edge.pointA - _nodes[parent].position).normalized ) >= 0 )
                                 {
@@ -195,7 +244,7 @@ namespace Source
                                 }
                                 else
                                 {
-                                    intersectionOnAngle = true;
+                                    intersectionOnExtreme = true;
                                 }
                             }
 
@@ -210,10 +259,12 @@ namespace Source
                                 // Finds the other edge that the point to be removed belongs to
                                 otherEdge = beam.FindOtherEdge(outPoint, inPoint);
 
-                                // TODO:
-                                if (parent == 36)
+                                if (parent == 36 && otherEdge == null)
                                 {
-                                    // Controlla cosa va storto
+                                    Debug.Log("InPoint: " + inPoint);
+                                    Debug.Log("OutPoint: " + outPoint);
+
+                                    Debug.Log("Intersection: " + intersection);
                                 }
 
                                     // The other point to which outPoint is connected
@@ -223,9 +274,9 @@ namespace Source
                                     if (LinePlaneIntersection( out secondIntersection, otherEdge.pointA, otherEdge.pointB - otherEdge.pointA, plane.normal, _nodes[parent].position))
                                     {
                                         // The second intersection is near the other point
-                                        if ((secondIntersection - otherPoint).magnitude < 0.2f)
+                                        if ((secondIntersection - otherPoint).magnitude <= 0.02f)
                                         {
-                                            if (intersectionOnAngle)
+                                            if (intersectionOnExtreme)
                                             {
                                                 beam.RemovePoint(outPoint);
 
@@ -248,14 +299,14 @@ namespace Source
                                             }
                                         }
                                         // The second intersection is near the outpoint
-                                        else if ((intersection - outPoint).magnitude < 0.2f)
+                                        else if ((intersection - outPoint).magnitude <= 0.02f)
                                         {
                                             blackList.Add(edge);
                                         }
                                         // The second intersection is not on the edge extremes
                                         else
                                         {
-                                            if (intersectionOnAngle)
+                                            if (intersectionOnExtreme)
                                             {
                                                 beam.RemovePoint(outPoint);
 
@@ -286,7 +337,7 @@ namespace Source
                                     // No second intersection ont the other edge
                                     else
                                     {
-                                        if (intersectionOnAngle)
+                                        if (intersectionOnExtreme)
                                         {
                                             beam.RemovePoint(outPoint);
                                             
@@ -310,6 +361,25 @@ namespace Source
                                     }
 
                                     e = 0;
+
+                                    // TODO:
+                                    if (parent == 36)
+                                    {
+                                        Debug.Log("Intersection");
+
+                                        Debug.Log("Points:");
+                                        foreach ( var point in beam.Points )
+                                        {
+                                            Debug.Log(point);
+                                        }
+                                        Debug.Log("Edges:");
+                                        foreach ( var edgeLord in beam.Edges )
+                                        {
+                                            Debug.Log("[ " + edgeLord.pointA + " , " + edgeLord.pointB + " ]");
+                                        }
+
+                                        Debug.Log("");
+                                    }
                                 
                             }
                             else
@@ -330,7 +400,8 @@ namespace Source
                 if (beam.Points.Count <= 2 || beam.Edges.Count <= 2)
                 {
                     _beam++;
-                    return false;
+                    _nodes.Add( new IS(i, parent, surface, beam, false ) );
+                    return true;
                 }
 
                 // Checking, for each point resulting from the projection, if it is in the correct semispace of all planes
@@ -342,7 +413,8 @@ namespace Source
                         if ( Vector3.Dot( (point - _nodes[parent].position).normalized , plane.normal) < -0.05f )
                         {
                             _beam++;
-                            return false;
+                            _nodes.Add( new IS(i, parent, surface, beam, false ) );
+                            return true;
                         }
                     }
                 }
@@ -357,6 +429,8 @@ namespace Source
                 _nodes.Add( new IS(i, parent, surface, new( Surfaces[surface].Points , Surfaces[surface].Edges ) ) );
 
             _nodes[i].position = pos;
+
+            realISs++;
 
             return true;
         }
@@ -419,7 +493,7 @@ namespace Source
                 else if (length >= lineVec.magnitude)
                     intersection = linePoint + lineVec;
 
-                return length >= -0.01f && length <= lineVec.magnitude + 0.01f;
+                return length >= -0.02f && length <= lineVec.magnitude + 0.02f;
             }
             else
             {

@@ -39,6 +39,8 @@ namespace Source
 
         [ReadOnly] public int parentNode = 0;
 
+        [ReadOnly] public List<int> inactiveNodes = new();
+
 
 
         // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -52,6 +54,14 @@ namespace Source
         private void GenerateISPositions()
         {
             tree = new(SurfaceManager.Instance.N, order, transform.position, WrongSideOfReflector, BeamTracing, BeamClipping);
+
+            inactiveNodes.Clear();
+
+            for (int i = 0 ; i < tree.Nodes.Count ; i++)
+            {
+                if (!tree.Nodes[i].active)
+                    inactiveNodes.Add(i);
+            }
         }
 
 
