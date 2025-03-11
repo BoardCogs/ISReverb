@@ -334,7 +334,7 @@ namespace Source
                                             }
                                         }
                                     }
-                                    // No second intersection ont the other edge
+                                    // No second intersection on the other edge
                                     else
                                     {
                                         if (intersectionOnExtreme)
@@ -344,7 +344,7 @@ namespace Source
                                             beam.RemoveEdge(edge);
                                             beam.RemoveEdge(otherEdge);
 
-                                            blackList.Add( beam.AddEdge(inPoint, otherPoint) );
+                                            beam.AddEdge(inPoint, otherPoint);
                                         }
                                         else
                                         {
@@ -355,8 +355,8 @@ namespace Source
 
                                             beam.AddPoint(intersection);
 
-                                            blackList.Add( beam.AddEdge(intersection, inPoint) );
-                                            blackList.Add( beam.AddEdge(intersection, otherPoint) );
+                                            beam.AddEdge(intersection, inPoint);
+                                            beam.AddEdge(intersection, otherPoint);
                                         }
                                     }
 
