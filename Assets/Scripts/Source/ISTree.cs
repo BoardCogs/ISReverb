@@ -172,61 +172,148 @@ namespace Source
                         // Checks if the edge intersects the plane
                         if ( !blackList.Contains(edge) && LinePlaneIntersection( out intersection, edge.pointA, edge.pointB - edge.pointA, plane.normal, _nodes[parent].position ) )
                         {
-                            // The point that is on the correct semispace of the plane (to be kept)
-                            inPoint = Vector3.Dot( plane.normal, (edge.pointA - _nodes[parent].position).normalized ) > Vector3.Dot( plane.normal, (edge.pointB - _nodes[parent].position).normalized ) ? edge.pointA : edge.pointB;
-                            // The point that is on the other semispace of the plane (to be removed)
-                            outPoint = inPoint == edge.pointA ? edge.pointB : edge.pointA;
+                            bool doNothing = false;
+                            bool intersectionOnAngle = false;
 
-                            // Finds the other edge that the point to be removed belongs to
-                            otherEdge = beam.FindOtherEdge(outPoint, inPoint);
-
-                            if (otherEdge != null)
+                            // Check if intersection is on the edge extremes
+                            if ((intersection - edge.pointA).magnitude < 0.3f)
                             {
-                                // The other point to which outPoint is connected
-                                otherPoint = otherEdge.pointA == outPoint ? otherEdge.pointB : otherEdge.pointA;
-
-                                // Checks if the other edge has also intersections with the same plane
-                                if (LinePlaneIntersection( out secondIntersection, otherEdge.pointA, otherEdge.pointB - otherEdge.pointA, plane.normal, _nodes[parent].position))
+                                if ( Vector3.Dot( plane.normal, (edge.pointB - _nodes[parent].position).normalized ) >= 0 )
                                 {
-                                    beam.RemovePoint(outPoint);
-
-                                    beam.RemoveEdge(edge);
-                                    beam.RemoveEdge(otherEdge);
-
-                                    beam.AddPoint(intersection);
-                                    beam.AddPoint(secondIntersection);
-
-                                    blackList.Add( beam.AddEdge(intersection, inPoint) );
-                                    blackList.Add( beam.AddEdge(intersection, secondIntersection) );
-                                    blackList.Add( beam.AddEdge(secondIntersection, otherPoint) );
+                                    doNothing = true;
                                 }
                                 else
                                 {
-                                    beam.RemovePoint(outPoint);
-                                    
-                                    beam.RemoveEdge(edge);
-                                    beam.RemoveEdge(otherEdge);
+                                    intersectionOnAngle = true;
+                                }
+                            }
+                            else if ((intersection - edge.pointB).magnitude < 0.3f)
+                            {
+                                if ( Vector3.Dot( plane.normal, (edge.pointA - _nodes[parent].position).normalized ) >= 0 )
+                                {
+                                    doNothing = true;
+                                }
+                                else
+                                {
+                                    intersectionOnAngle = true;
+                                }
+                            }
 
-                                    beam.AddPoint(intersection);
 
-                                    blackList.Add( beam.AddEdge(intersection, inPoint) );
-                                    blackList.Add( beam.AddEdge(intersection, otherPoint) );
+                            if (!doNothing)
+                            {
+                                // The point that is on the correct semispace of the plane (to be kept)
+                                inPoint = Vector3.Dot( plane.normal, (edge.pointA - _nodes[parent].position).normalized ) > Vector3.Dot( plane.normal, (edge.pointB - _nodes[parent].position).normalized ) ? edge.pointA : edge.pointB;
+                                // The point that is on the other semispace of the plane (to be removed)
+                                outPoint = inPoint == edge.pointA ? edge.pointB : edge.pointA;
+
+                                // Finds the other edge that the point to be removed belongs to
+                                otherEdge = beam.FindOtherEdge(outPoint, inPoint);
+
+                                // TODO:
+                                if (parent == 36)
+                                {
+                                    // Controlla cosa va storto
                                 }
 
-                                e = 0;
+                                    // The other point to which outPoint is connected
+                                    otherPoint = otherEdge.pointA == outPoint ? otherEdge.pointB : otherEdge.pointA;
+
+                                    // Checks if the other edge has also intersections with the same plane
+                                    if (LinePlaneIntersection( out secondIntersection, otherEdge.pointA, otherEdge.pointB - otherEdge.pointA, plane.normal, _nodes[parent].position))
+                                    {
+                                        // The second intersection is near the other point
+                                        if ((secondIntersection - otherPoint).magnitude < 0.2f)
+                                        {
+                                            if (intersectionOnAngle)
+                                            {
+                                                beam.RemovePoint(outPoint);
+
+                                                beam.RemoveEdge(edge);
+                                                beam.RemoveEdge(otherEdge);
+
+                                                blackList.Add( beam.AddEdge(inPoint, otherPoint) );
+                                            }
+                                            else
+                                            {
+                                                beam.RemovePoint(outPoint);
+
+                                                beam.RemoveEdge(edge);
+                                                beam.RemoveEdge(otherEdge);
+
+                                                beam.AddPoint(intersection);
+
+                                                blackList.Add( beam.AddEdge(intersection, inPoint) );
+                                                blackList.Add( beam.AddEdge(intersection, otherPoint) );
+                                            }
+                                        }
+                                        // The second intersection is near the outpoint
+                                        else if ((intersection - outPoint).magnitude < 0.2f)
+                                        {
+                                            blackList.Add(edge);
+                                        }
+                                        // The second intersection is not on the edge extremes
+                                        else
+                                        {
+                                            if (intersectionOnAngle)
+                                            {
+                                                beam.RemovePoint(outPoint);
+
+                                                beam.RemoveEdge(edge);
+                                                beam.RemoveEdge(otherEdge);
+
+                                                beam.AddPoint(secondIntersection);
+
+                                                blackList.Add( beam.AddEdge(inPoint, secondIntersection) );
+                                                blackList.Add( beam.AddEdge(secondIntersection, otherPoint) );
+                                            }
+                                            else
+                                            {
+                                                beam.RemovePoint(outPoint);
+
+                                                beam.RemoveEdge(edge);
+                                                beam.RemoveEdge(otherEdge);
+
+                                                beam.AddPoint(intersection);
+                                                beam.AddPoint(secondIntersection);
+
+                                                blackList.Add( beam.AddEdge(intersection, inPoint) );
+                                                blackList.Add( beam.AddEdge(intersection, secondIntersection) );
+                                                blackList.Add( beam.AddEdge(secondIntersection, otherPoint) );
+                                            }
+                                        }
+                                    }
+                                    // No second intersection ont the other edge
+                                    else
+                                    {
+                                        if (intersectionOnAngle)
+                                        {
+                                            beam.RemovePoint(outPoint);
+                                            
+                                            beam.RemoveEdge(edge);
+                                            beam.RemoveEdge(otherEdge);
+
+                                            blackList.Add( beam.AddEdge(inPoint, otherPoint) );
+                                        }
+                                        else
+                                        {
+                                            beam.RemovePoint(outPoint);
+                                            
+                                            beam.RemoveEdge(edge);
+                                            beam.RemoveEdge(otherEdge);
+
+                                            beam.AddPoint(intersection);
+
+                                            blackList.Add( beam.AddEdge(intersection, inPoint) );
+                                            blackList.Add( beam.AddEdge(intersection, otherPoint) );
+                                        }
+                                    }
+
+                                    e = 0;
+                                
                             }
                             else
                             {
-                                Debug.Log("OutPoint: " + outPoint);
-                                Debug.Log("InPoint: " + inPoint);
-
-                                Debug.Log("Current edges in beam: ");
-
-                                foreach (Edge edgeLord in beam.Edges)
-                                {
-                                    Debug.Log("["+ edgeLord.pointA + ", " + edgeLord.pointB +"]");
-                                }
-
                                 blackList.Add(edge);
                                 e++;
                             }
@@ -252,7 +339,7 @@ namespace Source
                     foreach (Plane plane in projectionPlanes)
                     {
                         // If a point of the projection falls out of a semispace of the projection plane, then no IS is created
-                        if ( Vector3.Dot( (point - _nodes[parent].position).normalized, plane.normal) < -0.05f )
+                        if ( Vector3.Dot( (point - _nodes[parent].position).normalized , plane.normal) < -0.05f )
                         {
                             _beam++;
                             return false;
@@ -300,7 +387,7 @@ namespace Source
             foreach(Vector3 point in points)
             {
                 if (point != pointA && point != pointB)
-                    return Vector3.Dot( (point - pointA).normalized, normal) >= 0;
+                    return Vector3.Dot( (point - pointA).normalized , normal) >= 0;
             }
 
             return true;
@@ -327,9 +414,9 @@ namespace Source
 
                 intersection = linePoint + lineVec.normalized * length;
 
-                if (length < 0)
+                if (length <= 0)
                     intersection = linePoint;
-                else if (length > lineVec.magnitude)
+                else if (length >= lineVec.magnitude)
                     intersection = linePoint + lineVec;
 
                 return length >= -0.01f && length <= lineVec.magnitude + 0.01f;
