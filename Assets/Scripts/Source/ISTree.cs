@@ -147,54 +147,10 @@ namespace Source
 
 
 
-            // TODO:
-            if (parent == 36)
-            {
-                Debug.Log("");
-                Debug.Log("");
-                Debug.Log("");
-
-                Debug.Log("Points:");
-                foreach ( var point in _nodes[parent].beamPoints.Points )
-                {
-                    Debug.Log(point);
-                }
-                Debug.Log("Edges:");
-                foreach ( var edge in _nodes[parent].beamPoints.Edges )
-                {
-                    Debug.Log("[ " + edge.pointA + " , " + edge.pointB + " ]");
-                }
-
-                Debug.Log("");
-
-                Debug.Log("Checking against surface number " + surface);
-            }
-
-
-
             // 3
             // Checking that reflections from parent to this surface are possible
 
             Beam beam = new( Surfaces[surface].Points , Surfaces[surface].Edges );
-
-
-            // TODO:
-            if (parent == 36)
-            {
-                Debug.Log("Points:");
-                foreach ( var point in beam.Points )
-                {
-                    Debug.Log(point);
-                }
-                Debug.Log("Edges:");
-                foreach ( var edge in beam.Edges )
-                {
-                    Debug.Log("[ " + edge.pointA + " , " + edge.pointB + " ]");
-                }
-
-                Debug.Log("");
-            }
-
 
             if (_beamTracing)
             {
@@ -259,13 +215,8 @@ namespace Source
                                 // Finds the other edge that the point to be removed belongs to
                                 otherEdge = beam.FindOtherEdge(outPoint, inPoint);
 
-                                if (parent == 36 && otherEdge == null)
+                                if (otherEdge != null)
                                 {
-                                    Debug.Log("InPoint: " + inPoint);
-                                    Debug.Log("OutPoint: " + outPoint);
-
-                                    Debug.Log("Intersection: " + intersection);
-                                }
 
                                     // The other point to which outPoint is connected
                                     otherPoint = otherEdge.pointA == outPoint ? otherEdge.pointB : otherEdge.pointA;
@@ -362,25 +313,12 @@ namespace Source
 
                                     e = 0;
 
-                                    // TODO:
-                                    if (parent == 36)
-                                    {
-                                        Debug.Log("Intersection");
-
-                                        Debug.Log("Points:");
-                                        foreach ( var point in beam.Points )
-                                        {
-                                            Debug.Log(point);
-                                        }
-                                        Debug.Log("Edges:");
-                                        foreach ( var edgeLord in beam.Edges )
-                                        {
-                                            Debug.Log("[ " + edgeLord.pointA + " , " + edgeLord.pointB + " ]");
-                                        }
-
-                                        Debug.Log("");
-                                    }
-                                
+                                }
+                                else
+                                {
+                                    blackList.Add(edge);
+                                    e++;
+                                }
                             }
                             else
                             {
@@ -401,6 +339,7 @@ namespace Source
                 {
                     _beam++;
                     _nodes.Add( new IS(i, parent, surface, beam, false ) );
+                    _nodes[i].position = pos;
                     return true;
                 }
 
@@ -414,6 +353,7 @@ namespace Source
                         {
                             _beam++;
                             _nodes.Add( new IS(i, parent, surface, beam, false ) );
+                            _nodes[i].position = pos;
                             return true;
                         }
                     }

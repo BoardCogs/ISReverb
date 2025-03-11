@@ -84,16 +84,16 @@ namespace Source
             // Draws Source
             Gizmos.DrawSphere(transform.position, 0.5f);
 
+            Gizmos.color = Color.green;
+
             // Draws Image Sources
             if (drawImageSources == true)
             {
-                Gizmos.color = Color.green;
-
                 if (tree != null)
                 {
                     foreach (var node in tree.Nodes)
                     {
-                        if (node != null)
+                        if (node.active == true)
                             Gizmos.DrawSphere(node.position, 0.5f);
                     }
                 }
