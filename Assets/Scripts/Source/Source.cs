@@ -141,7 +141,7 @@ namespace Source
                         currentNode = tree.Nodes[currentIndex];
                         to = currentNode.position;
 
-                        if ( Physics.Raycast(from + 0.001f * (to - from).normalized, to - from, out hitInfo, Vector3.Magnitude(to - from), layerMask) )
+                        if ( Physics.Raycast(from, to - from, out hitInfo, Vector3.Magnitude(to - from), layerMask) )
                         {
                             var hitSurface = hitInfo.transform.gameObject.GetComponent<ReflectiveSurface>();
 
