@@ -3,6 +3,8 @@ using Surfaces;
 using ImageSources;
 using System.Collections.Generic;
 using System;
+using UnityEditor.EditorTools;
+using System.Security.Cryptography;
 
 
 
@@ -14,12 +16,21 @@ namespace Source
         // The Image Sources tree
         private ISTree tree;
 
+        // All reflectors in the scene
+        private List<ReflectiveSurface> Surfaces => SurfaceManager.Instance.surfaces;
+
+
+        [Tooltip("The layer mask for sound reflection")]
+        public LayerMask layerMask;
 
         [Tooltip("The maximum order of reflection to be computed")]
         public int order;
 
         [Tooltip("Set to true to activate IS generation (only in play mode)")]
         public bool generateImageSources = false;
+
+        [Tooltip("Set to true to activate path generation and checking (only in play mode)")]
+        public bool generateReflectionPaths = false;
 
         [Tooltip("Set to true to visualize ISs (performance heavy)")]
         public bool drawImageSources = false;
@@ -35,7 +46,7 @@ namespace Source
 
         public bool drawPlaneProjection = true;
 
-        public int checkNode = 0;
+        public int checkNode = -1;
 
         [ReadOnly] public int parentNode = 0;
 
@@ -49,25 +60,13 @@ namespace Source
         void Start()
         {
             GenerateISPositions();
+
+            GenerateReflectionPaths();
         }
 
 
 
-        private void GenerateISPositions()
-        {
-            tree = new(SurfaceManager.Instance.N, order, transform.position, WrongSideOfReflector, BeamTracing, BeamClipping, debugBeamTracing);
-
-            inactiveNodes.Clear();
-
-            for (int i = 0 ; i < tree.Nodes.Count ; i++)
-            {
-                if (!tree.Nodes[i].active)
-                    inactiveNodes.Add(i);
-            }
-        }
-
-
-
+        // Activates node regeneration with the given parameters
         void OnValidate()
         {
             if (generateImageSources == true)
@@ -75,6 +74,122 @@ namespace Source
                 GenerateISPositions();
                 generateImageSources = false;
             }
+
+            if (generateReflectionPaths == true)
+            {
+                GenerateReflectionPaths();
+                generateReflectionPaths = false;
+            }
+        }
+
+
+        
+        // Generates Image Sources position with the given parameters
+        private void GenerateISPositions()
+        {
+            bool _backUpDrawISs = drawImageSources;
+            drawImageSources = false;
+
+            tree = new(SurfaceManager.Instance.N, order, transform.position, WrongSideOfReflector, BeamTracing, BeamClipping, debugBeamTracing);
+
+            inactiveNodes.Clear();
+
+            for (int i = 0 ; i < tree.Nodes.Count ; i++)
+            {
+                if (!tree.Nodes[i].valid)
+                    inactiveNodes.Add(i);
+            }
+
+            drawImageSources = _backUpDrawISs;
+        }
+
+
+
+        // Generates paths for sound reflections, checking if the sound reaches the listener
+        private void GenerateReflectionPaths()
+        {
+            if (tree == null)
+                return;
+
+            int validPaths = 0;
+            
+            var listener = FindAnyObjectByType<AkAudioListener>().transform.position;
+
+            RaycastHit hitInfo;
+            List<Vector3> intersections = new();
+            int currentIndex;
+            IS currentNode;
+            Vector3 from;
+            Vector3 to;
+
+            foreach (var node in tree.Nodes)
+            {
+                if (node.valid)
+                {
+                    // Innocent until proven guilty
+                    node.hasPath = true;
+
+                    intersections.Clear();
+
+                    intersections.Add(listener);
+
+                    currentIndex = node.index;
+                    from = listener;
+
+                    while (currentIndex != -1)
+                    {
+                        currentNode = tree.Nodes[currentIndex];
+                        to = currentNode.position;
+
+                        if ( Physics.Raycast(from + 0.001f * (to - from).normalized, to - from, out hitInfo, Vector3.Magnitude(to - from), layerMask) )
+                        {
+                            var hitSurface = hitInfo.transform.gameObject.GetComponent<ReflectiveSurface>();
+
+                            if ( hitSurface != null && hitSurface.id == Surfaces[currentNode.surface].id )
+                            {
+                                intersections.Add(hitInfo.point);
+                                from = hitInfo.point;
+                            }
+                            else
+                            {
+                                intersections.Add(hitInfo.point);
+                                node.hasPath = false;
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            intersections.Add(to);
+                            node.hasPath = false;
+                            break;
+                        }
+
+                        currentIndex = currentNode.parent;
+                    }
+
+                    if (node.hasPath)
+                    {
+                        if ( !Physics.Raycast(from, transform.position - from, out hitInfo, Vector3.Magnitude(transform.position - from), layerMask) )
+                        {
+                            intersections.Add(transform.position);
+                            node.hasPath = true;
+                            validPaths++;
+                        }
+                        else
+                        {
+                            intersections.Add(hitInfo.point);
+                            node.hasPath = false;
+                        }
+                    }
+
+                    node.path = new( intersections );
+                }
+            }
+
+            Debug.Log(
+                        "Reflection paths generated\n" +
+                        validPaths + " ISs with a valid path out of " + tree.Nodes.Count + " total ISs"
+                     );
         }
 
 
@@ -95,15 +210,34 @@ namespace Source
                 {
                     foreach (var node in tree.Nodes)
                     {
-                        if (node.active == true)
+                        if (node.valid == true)
                             Gizmos.DrawSphere(node.position, 0.5f);
                     }
                 }
             }
 
+
+
+            // Draws reflection path
+            if (checkNode != -1 && checkNode >= 0 && checkNode < tree.Nodes.Count)
+            {
+                IS node = tree.Nodes[checkNode];
+
+                if (node.hasPath == true)
+                    Gizmos.color = Color.black;
+                else
+                    Gizmos.color = Color.red;
+
+                for (int i = 0; i < node.path.Count - 1 ; i++)
+                {
+                    Gizmos.DrawLine(node.path[i], node.path[i + 1]);
+                }
+            }
+
+
             
             // Draws beam tracing and clipping process to debug
-            if (checkNode != 0 && checkNode >= SurfaceManager.Instance.N && checkNode < tree.Nodes.Count)
+            if (checkNode != -1 && checkNode >= SurfaceManager.Instance.N && checkNode < tree.Nodes.Count)
             {
                 // Draws the resulting beam projection on the reflector
 

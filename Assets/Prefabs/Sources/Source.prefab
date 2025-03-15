@@ -44,3 +44,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f31cd7ba71bcd754dbab5e978f2eb3d7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  layerMask:
+    serializedVersion: 2
+    m_Bits: 8
+  order: 3
+  generateImageSources: 0
+  generateReflectionPaths: 0
+  drawImageSources: 1
+  WrongSideOfReflector: 1
+  BeamTracing: 1
+  BeamClipping: 1
+  drawPlaneProjection: 1
+  checkNode: -1
+  parentNode: 0
+  debugBeamTracing: 0
+  inactiveNodes: 

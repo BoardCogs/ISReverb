@@ -12,7 +12,7 @@ namespace ImageSources
     {
         
         // The index of this Image Source in its ISTree
-        [ReadOnly] public int id;
+        [ReadOnly] public int index;
 
         // The index of this Image Source's parent
         [ReadOnly] public int parent;
@@ -27,27 +27,33 @@ namespace ImageSources
         [HideInInspector] public Beam beamPoints;
 
         // If false, the IS should have been removed
-        [ReadOnly] public bool active;
+        [ReadOnly] public bool valid;
+
+        // If true, the IS has a reflection path that reaches the listener
+        [ReadOnly] public bool hasPath = true;
+
+        // The reflection path followed by sound to reach the listener
+        public List<Vector3> path = new();
 
 
 
-        public IS(int i, int p, int s, Beam beam, bool a = true)
+        public IS(int i, int p, int s, Beam beam, bool v = true)
         {
-            id = i;
+            index = i;
             parent = p;
             surface = s;
             beamPoints = beam;
-            active = a;
+            valid = v;
+            hasPath = true;
+            path = new();
         }
 
 
-        /*
-        void OnDrawGizmos()
+
+        public void SetPath(bool b, List<Vector3> p)
         {
-            Gizmos.color = Color.green;
-
-            Gizmos.DrawSphere(position, 0.1f);
+            hasPath = b;
+            path = p;
         }
-        */
     }
 }

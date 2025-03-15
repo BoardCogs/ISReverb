@@ -1550,26 +1550,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 6946415902182953807, guid: 867aacc82cbfa2b44a1daa151717d31a, type: 3}
-      propertyPath: order
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 6946415902182953807, guid: 867aacc82cbfa2b44a1daa151717d31a, type: 3}
-      propertyPath: BeamTracing
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6946415902182953807, guid: 867aacc82cbfa2b44a1daa151717d31a, type: 3}
-      propertyPath: BeamClipping
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6946415902182953807, guid: 867aacc82cbfa2b44a1daa151717d31a, type: 3}
-      propertyPath: drawImageSources
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6946415902182953807, guid: 867aacc82cbfa2b44a1daa151717d31a, type: 3}
-      propertyPath: generateImageSources
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 7808833360065985509, guid: 867aacc82cbfa2b44a1daa151717d31a, type: 3}
       propertyPath: m_Name
       value: Source1

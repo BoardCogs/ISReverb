@@ -20,27 +20,35 @@ namespace Source
         // All nodes of the tree, each one identifying an Image Source
         private List<IS> _nodes = new();
 
+        // Amount of ISs saved by not mirroring another IS on its reflector
         private int _noDouble = 0;
 
+        // Wheter to optimize by not generating ISs on the front side of a reflector
         private bool _wrongSideOfReflector;
 
+        // Amount of ISs saved by not generating ISs on the front side of a reflector
         private int _wrongSide = 0;
 
+        // Wheter to optimize by not generating ISs for surfaces that fall outside the beam of their parent IS
         public bool _beamTracing;
 
+        // Wheter to optimize by projecting the beam from an IS only using the portion of reflector that fell inside the beam of the parent IS
         public bool _beamClipping;
 
+        // Amount of ISs saved by using beam tracing and clipping
         private int _beam = 0;
 
+        // In case of debug, this counter stores the actual number of active ISs created
         private int _realISs = 0;
 
+        // Generates ISs that would be shaved by beam tracing and clipping as inactive ISs, allows to check wether the optimization is accurate or not
         private bool _debugBeamTracing;
 
+        // All reflectors in the scene
         private List<ReflectiveSurface> Surfaces => SurfaceManager.Instance.surfaces;
 
+        // For public access
         public List<IS> Nodes => _nodes;
-
-        public int R => _ro;
 
 
 
@@ -91,10 +99,10 @@ namespace Source
                 // Checks on all ISs belonging to the previous order, acting as parents for new Image Sources
                 for (int p = firstNodeOfOrder[order-1] ; p < firstNodeOfOrder[order] ; p++)
                 {
-                    if (!_nodes[p].active)
+                    if (!_nodes[p].valid)
                         continue;
 
-                    // TODO: generate beam planes for the parent only here, to avoid repeating the operation for each child
+                    // Beam projection planes for the parent are generated here, to avoid repeating the operation for each child
                     projectionPlanes = CreateProjectionPlanes( _nodes[p].position, _nodes[p].beamPoints );
 
                     // Iterates on all surfaces, checking if a new IS can be derived from a reflection of the parent on them
@@ -151,23 +159,30 @@ namespace Source
 
 
             // 3
-            // Checking that reflections from parent to this surface are possible
+            // Checking that reflections from parent to this surface are possible with beam tracing (+ clipping)
 
             Beam beam = new( Surfaces[surface].Points , Surfaces[surface].Edges );
 
             if (_beamTracing)
             {
+                // Intersection with this edge
                 Vector3 intersection;
-                Vector3 secondIntersection;
+                // Edge extreme that falls inside projection
                 Vector3 inPoint;
+                // Edge extreme that falls outside projection
                 Vector3 outPoint;
-                Vector3 otherPoint;
+                // The other edge connected to the outPoint
                 Edge otherEdge;
+                // Edge extreme of the other edge
+                Vector3 otherPoint;
+                // Intersection with the other edge
+                Vector3 secondIntersection;
+                // List of edges that don't need an intersection to be tested (to avoid repeated intersection detection on edge extremes)
                 List<Edge> blackList = new();
                 int e = 0;
 
                 
-                // For all 
+                // For all planes of projection, check for intersections with the edges of this surface
                 foreach (Plane plane in projectionPlanes)
                 {
                     blackList.Clear();
@@ -180,7 +195,9 @@ namespace Source
                         // Checks if the edge intersects the plane
                         if ( !blackList.Contains(edge) && LinePlaneIntersection( out intersection, edge.pointA, edge.pointB - edge.pointA, plane.normal, _nodes[parent].position ) )
                         {
+                            // Wether the intersection is on the extreme of the edge and the edge is entirely in the projection
                             bool doNothing = false;
+                            // Wether the intersection is on the extreme of the edge and the edge is entirely out of the projection
                             bool intersectionOnExtreme = false;
 
                             // Check if intersection is on the edge extremes
@@ -188,10 +205,14 @@ namespace Source
                             {
                                 if ( Vector3.Dot( plane.normal, (edge.pointB - _nodes[parent].position).normalized ) >= 0 )
                                 {
+                                    // The intersection is near the edge extreme A and the projection plane includes the other extreme, B
+                                    // The edge is included almost entirely, nothing to do here
                                     doNothing = true;
                                 }
                                 else
                                 {
+                                    // The intersection is near the edge extreme A and the projection plane excludes the other extreme, B
+                                    // The edge is excluded almost entirely, this information is saved
                                     intersectionOnExtreme = true;
                                 }
                             }
@@ -199,15 +220,20 @@ namespace Source
                             {
                                 if ( Vector3.Dot( plane.normal, (edge.pointA - _nodes[parent].position).normalized ) >= 0 )
                                 {
+                                    // The intersection is near the edge extreme B and the projection plane includes the other extreme, A
+                                    // The edge is included almost entirely, nothing to do here
                                     doNothing = true;
                                 }
                                 else
                                 {
+                                    // The intersection is near the edge extreme B and the projection plane excludes the other extreme, A
+                                    // The edge is excluded almost entirely, this information is saved
                                     intersectionOnExtreme = true;
                                 }
                             }
 
 
+                            // If the edge is not entirely inside the projection
                             if (!doNothing)
                             {
                                 // The point that is on the correct semispace of the plane (to be kept)
@@ -218,13 +244,13 @@ namespace Source
                                 // Finds the other edge that the point to be removed belongs to
                                 otherEdge = beam.FindOtherEdge(outPoint, inPoint);
 
+                                // If the other edge has been found
                                 if (otherEdge != null)
                                 {
-
                                     // The other point to which outPoint is connected
                                     otherPoint = otherEdge.pointA == outPoint ? otherEdge.pointB : otherEdge.pointA;
 
-                                    // Checks if the other edge has also intersections with the same plane
+                                    // Checks if the other edge has also an intersection with the same projection plane
                                     if (LinePlaneIntersection( out secondIntersection, otherEdge.pointA, otherEdge.pointB - otherEdge.pointA, plane.normal, _nodes[parent].position))
                                     {
                                         // The second intersection is near the other point
@@ -232,6 +258,9 @@ namespace Source
                                         {
                                             if (intersectionOnExtreme)
                                             {
+                                                // Both this edge and the other are entirely out of the projection beam
+                                                // Both are removed and a single edge connecting theit opposite extremes is created
+
                                                 beam.RemovePoint(outPoint);
 
                                                 beam.RemoveEdge(edge);
@@ -241,6 +270,9 @@ namespace Source
                                             }
                                             else
                                             {
+                                                // The other edge is entirely out of the projection beam, the current one isn't
+                                                // Both are removed and two edges are created: inner point-intersection, intersection-other point
+
                                                 beam.RemovePoint(outPoint);
 
                                                 beam.RemoveEdge(edge);
@@ -319,8 +351,25 @@ namespace Source
                                 }
                                 else
                                 {
+                                    /*
                                     blackList.Add(edge);
                                     e++;
+                                    */
+
+                                    // If the other edge has not been found, some approximation error has occurred
+                                    // This means the projection is extremely small -> let's remove it altogether
+                                    _beam++;
+
+                                    if (_debugBeamTracing)
+                                    {
+                                        _nodes.Add( new IS(i, parent, surface, beam, false ) );
+                                        _nodes[i].position = pos;
+                                        return true;
+                                    }
+                                    else
+                                    {
+                                        return false;
+                                    }
                                 }
                             }
                             else
