@@ -80,7 +80,7 @@ namespace Source
             // Creating the first order ISs
             for (int i = 0; i < _sn ; i++, _realISs++)
             {
-                _nodes.Add( new IS( i, -1, i, new( Surfaces[i].Points , Surfaces[i].Edges ) ) );
+                _nodes.Add( new IS( i, 1, -1, i, new( Surfaces[i].Points , Surfaces[i].Edges ) ) );
 
                 var pos = sourcePos;
                     
@@ -108,7 +108,7 @@ namespace Source
                     // Iterates on all surfaces, checking if a new IS can be derived from a reflection of the parent on them
                     for (int s = 0 ; s < _sn ; s++)
                     {
-                        if ( CreateIS(i, p, s, projectionPlanes) )
+                        if ( CreateIS(i, order, p, s, projectionPlanes) )
                             i++;
                     }
                 }
@@ -131,7 +131,7 @@ namespace Source
 
 
         // This function checks all conditions for creating a new Image Source, then creates it if all are respected
-        private bool CreateIS(int i, int parent, int surface, List<Plane> projectionPlanes)
+        private bool CreateIS(int i, int order, int parent, int surface, List<Plane> projectionPlanes)
         {
             // 1
             // Checking that no IS is created identifying a reflection on the same surface twice in a row
@@ -362,7 +362,7 @@ namespace Source
 
                                     if (_debugBeamTracing)
                                     {
-                                        _nodes.Add( new IS(i, parent, surface, beam, false ) );
+                                        _nodes.Add( new IS(i, order, parent, surface, beam, false ) );
                                         _nodes[i].position = pos;
                                         return true;
                                     }
@@ -393,7 +393,7 @@ namespace Source
 
                     if (_debugBeamTracing)
                     {
-                        _nodes.Add( new IS(i, parent, surface, beam, false ) );
+                        _nodes.Add( new IS(i, order, parent, surface, beam, false ) );
                         _nodes[i].position = pos;
                         return true;
                     }
@@ -415,7 +415,7 @@ namespace Source
 
                             if (_debugBeamTracing)
                             {
-                                _nodes.Add( new IS(i, parent, surface, beam, false ) );
+                                _nodes.Add( new IS(i, order, parent, surface, beam, false ) );
                                 _nodes[i].position = pos;
                                 return true;
                             }
@@ -432,9 +432,9 @@ namespace Source
 
             // IS is created and its position is given
             if (_beamClipping)
-                _nodes.Add( new IS(i, parent, surface, beam ) );
+                _nodes.Add( new IS(i, order, parent, surface, beam ) );
             else
-                _nodes.Add( new IS(i, parent, surface, new( Surfaces[surface].Points , Surfaces[surface].Edges ) ) );
+                _nodes.Add( new IS(i, order, parent, surface, new( Surfaces[surface].Points , Surfaces[surface].Edges ) ) );
 
             _nodes[i].position = pos;
 
