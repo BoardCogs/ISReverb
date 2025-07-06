@@ -14,6 +14,9 @@ namespace ImageSources
         // The index of this Image Source in its ISTree
         [ReadOnly] public int index;
 
+        // The order of this IS
+        [ReadOnly] public int order;
+
         // The index of this Image Source's parent
         [ReadOnly] public int parent;
 
@@ -37,9 +40,10 @@ namespace ImageSources
 
 
 
-        public IS(int i, int p, int s, Beam beam, bool v = true)
+        public IS(int i, int o, int p, int s, Beam beam, bool v = true)
         {
             index = i;
+            order = o;
             parent = p;
             surface = s;
             beamPoints = beam;

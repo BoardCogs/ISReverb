@@ -20,38 +20,55 @@ namespace Source
         private List<ReflectiveSurface> Surfaces => SurfaceManager.Instance.surfaces;
 
 
-        [Tooltip("The layer mask for sound reflection")]
+        [Tooltip("The layer mask for sound reflection")] [SerializeField]
         public LayerMask layerMask;
 
-        [Tooltip("The maximum order of reflection to be computed")]
+        [Tooltip("The maximum order of reflection to be computed")] [SerializeField]
         public int order;
 
-        [Tooltip("Set to true to activate IS generation (only in play mode)")]
+        [Tooltip("Set to true to activate IS generation (only in play mode)")] [SerializeField]
         public bool generateImageSources = false;
 
-        [Tooltip("Set to true to activate path generation and checking (only in play mode)")]
+        [Tooltip("Set to true to activate path generation and checking (only in play mode)")] [SerializeField]
         public bool generateReflectionPaths = false;
 
-        [Tooltip("Set to true to visualize ISs (performance heavy)")]
+        [Tooltip("Set to true to visualize ISs (performance heavy)")] [SerializeField]
         public bool drawImageSources = false;
 
         [Header("Optimizations")]
 
-        [Tooltip("Set true to remove all ISs that fall on the front side of their reflecting surface")]
+        [Tooltip("Set true to remove all ISs that fall on the front side of their reflecting surface")] [SerializeField]
         public bool WrongSideOfReflector = true;
+
+        [Tooltip("Set true to remove ISs if their parent's projection on its reflector doesn't fall on their reflector")] [SerializeField]
         public bool BeamTracing = true;
+
+        [Tooltip("Set true to clip IS reflectors with their parent's projection upon them, for more accurate beam tracing")] [SerializeField]
         public bool BeamClipping = true;
+
+        [Header("Visualize")]
+
+        [Tooltip("The minimum order of valid reflections to be visualized (included), set to -1 to disable")] [SerializeField]
+        public int MinOrder = -1;
+
+        [Tooltip("The maximum order of valid reflections to be visualized (included), set to -1 to disable")] [SerializeField]
+        public int MaxOrder = -1;
 
         [Header("Debug")]
 
+        [Tooltip("Draws projection of beam points and beam edges upon the reflector plane")] [SerializeField]
         public bool drawPlaneProjection = true;
 
+        [Tooltip("The id of the IS node to be visualized for debug, set to -1 to disable")] [SerializeField]
         public int checkNode = -1;
 
+        [Tooltip("The id of this IS node's parent")] [SerializeField]
         [ReadOnly] public int parentNode = 0;
 
+        [Tooltip("Set true to create invalid nodes (removed by optimization) in the list below, to check for accurate removal")] [SerializeField]
         public bool debugBeamTracing;
 
+        [Tooltip("Nodes removed by optimization, list is always empty if the option above is set to false")] [SerializeField]
         [ReadOnly] public List<int> inactiveNodes = new();
 
 
@@ -218,21 +235,43 @@ namespace Source
 
 
 
-            // Draws reflection path
-            if (checkNode != -1 && checkNode >= 0 && checkNode < tree.Nodes.Count)
+            //Draw all reflections path in a given order interval
+            if (MinOrder != -1 || MaxOrder != -1)
             {
-                IS node = tree.Nodes[checkNode];
+                Gizmos.color = Color.black;
 
-                if (node.hasPath == true)
-                    Gizmos.color = Color.black;
-                else
-                    Gizmos.color = Color.red;
-
-                for (int i = 0; i < node.path.Count - 1 ; i++)
+                foreach (var node in tree.Nodes)
                 {
-                    Gizmos.DrawLine(node.path[i], node.path[i + 1]);
+                    if (node.order >= MinOrder && node.order <= MaxOrder && node.hasPath)
+                    {
+                        for (int i = 0; i < node.path.Count - 1; i++)
+                        {
+                            Gizmos.DrawLine(node.path[i], node.path[i + 1]);
+                        }
+                    }
+
+                    if (node.order > MaxOrder)
+                        break;
                 }
             }
+
+
+
+            // Draws reflection path
+                if (checkNode != -1 && checkNode >= 0 && checkNode < tree.Nodes.Count)
+                {
+                    IS node = tree.Nodes[checkNode];
+
+                    if (node.hasPath == true)
+                        Gizmos.color = Color.black;
+                    else
+                        Gizmos.color = Color.red;
+
+                    for (int i = 0; i < node.path.Count - 1; i++)
+                    {
+                        Gizmos.DrawLine(node.path[i], node.path[i + 1]);
+                    }
+                }
 
 
             
