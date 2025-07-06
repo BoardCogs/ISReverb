@@ -262,20 +262,20 @@ namespace Source
 
 
             // Draws reflection path
-                if (checkNode != -1 && checkNode >= 0 && checkNode < tree.Nodes.Count)
+            if (checkNode != -1 && checkNode >= 0 && checkNode < tree.Nodes.Count)
+            {
+                IS node = tree.Nodes[checkNode];
+
+                if (node.hasPath == true)
+                    Gizmos.color = Color.black;
+                else
+                    Gizmos.color = Color.red;
+
+                for (int i = 0; i < node.path.Count - 1; i++)
                 {
-                    IS node = tree.Nodes[checkNode];
-
-                    if (node.hasPath == true)
-                        Gizmos.color = Color.black;
-                    else
-                        Gizmos.color = Color.red;
-
-                    for (int i = 0; i < node.path.Count - 1; i++)
-                    {
-                        Gizmos.DrawLine(node.path[i], node.path[i + 1]);
-                    }
+                    Gizmos.DrawLine(node.path[i], node.path[i + 1]);
                 }
+            }
 
 
             

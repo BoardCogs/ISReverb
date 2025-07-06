@@ -472,8 +472,9 @@ namespace Source
         {   
             foreach(Vector3 point in points)
             {
+                // Since the polygon forming the surface is convex, it's sufficient to check a single point that doesn't belong to the edge
                 if (point != pointA && point != pointB)
-                    return Vector3.Dot( (point - pointA).normalized , normal) >= 0;
+                    return Vector3.Dot((point - pointA).normalized, normal) >= 0;
             }
 
             return true;
