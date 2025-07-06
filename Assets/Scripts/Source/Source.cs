@@ -128,6 +128,8 @@ namespace Source
             if (tree == null)
                 return;
 
+            float timePassed = Time.realtimeSinceStartup;
+
             int validPaths = 0;
             
             var listener = FindAnyObjectByType<AkAudioListener>().transform.position;
@@ -203,8 +205,10 @@ namespace Source
                 }
             }
 
+            timePassed = Time.realtimeSinceStartup - timePassed;
+
             Debug.Log(
-                        "Reflection paths generated\n" +
+                        "Reflection paths generated in " + timePassed * 1000 + " milliseconds \n" +
                         validPaths + " ISs with a valid path out of " + tree.Nodes.Count + " total ISs"
                      );
         }

@@ -61,6 +61,8 @@ namespace Source
         {
             if (r == 0)
                 return;
+
+            float timePassed = Time.realtimeSinceStartup;
             
             _sn = n;
             _ro = r;
@@ -114,11 +116,13 @@ namespace Source
                 }
             }
 
+            timePassed = Time.realtimeSinceStartup - timePassed;
+
             /*
             Sending to console a debug message showing the total number of ISs created and the amount saved by optimization.
             The number of not generated ISs is only the tip of the iceberg: their children would have also been generated.
             */
-            Debug.Log(  "IS generation over\n" +
+            Debug.Log(  "IS generation over in " + timePassed * 1000 + " milliseconds\n" +
                         "Total number of ISs generated: " + _realISs + "\n" +
                         "Optimizations:\n" +
                         " - No reflection on same surface twice in a row: " + _noDouble + " ISs removed\n" +
