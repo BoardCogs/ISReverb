@@ -9,7 +9,7 @@ ISs are clones of the original source that simulate the original sound being hea
 
 The focus of this project is the generation of ISs and the validation of reflection paths for their sound rays, with special attention to implementing different opmizations to drastically cut time costs and achieve real-time computations. The simulation aslo allows to dinamically enable or disable different optimizations independently for benchmarking.
 
-For the full process and algorithms implemented in this simulation, refer to the full documentation inside this folder.
+For the full process and algorithms implemented in this simulation, refer to the [official documentation](/ISReverbDocumentation.pdf) inside this folder.
 
 ## Getting Started
 
