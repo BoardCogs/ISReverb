@@ -50,10 +50,12 @@ MonoBehaviour:
   order: 3
   generateImageSources: 0
   generateReflectionPaths: 0
-  drawImageSources: 1
+  drawImageSources: 0
   WrongSideOfReflector: 1
   BeamTracing: 1
   BeamClipping: 1
+  MinOrder: -1
+  MaxOrder: -1
   drawPlaneProjection: 1
   checkNode: -1
   parentNode: 0
